@@ -9,6 +9,16 @@ class User < ApplicationRecord
   has_many :tasks
   has_many :events
 
+  
+  validates :name, presence: true
+  validates :lastname, presence: true
+  validates :address, presence: true
+  validates :phone, presence: true, format: { with: /\A\d{10}\z/, message: 'must be exactly 10 digits' }
+  validates :birthdate, presence: true
+  validates :username, presence: true
+  validates :email, presence: true, uniqueness: true
+  validates :password, presence: true, length: { minimum: 6 }
+
   def jwt_payload
     super
   end

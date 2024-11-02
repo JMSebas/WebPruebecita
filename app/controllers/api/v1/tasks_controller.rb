@@ -2,9 +2,10 @@ module Api
   module V1
     class TasksController < ApplicationController
       before_action :set_task, only: %i[show update destroy start_task finish_task]
+      before_action :authenticate_user
 
       def index
-        @tasks = Task.all
+        @tasks = current_user.tasks # Solo obtiene las tareas del usuario autenticado
         render json: @tasks
       end
 
@@ -13,16 +14,15 @@ module Api
       end
 
       def create
-        @task = Task.new(task_params)
-        @task.status = 'pending' # Establecemos el estado por defecto
-
-        if @task.save
-          render json: @task, status: :created  
+        task = current_user.tasks.new(task_params)
+        task.status = "pending" # Crea la tarea asociada al usuario actual
+        if task.save
+          render json: { status: 200, message: 'Task created successfully', task: task }, status: :ok
         else
-          render json: @task.errors, status: :unprocessable_entity
+          render json: { status: 422, message: 'Task creation failed', errors: task.errors.full_messages }, status: :unprocessable_entity
         end
       end
-      
+
       def update
         if @task.update(task_params)
           render json: @task
@@ -36,7 +36,6 @@ module Api
         head :no_content
       end
 
-      # Nuevo método para iniciar la tarea
       def start_task
         if @task.update(status: 'in_process')
           render json: @task
@@ -45,7 +44,6 @@ module Api
         end
       end
 
-      # Nuevo método para finalizar la tarea
       def finish_task
         if @task.update(status: 'completed')
           render json: @task
@@ -56,12 +54,30 @@ module Api
 
       private
 
+      def authenticate_user
+        token = request.headers['Authorization']&.split(' ')&.last
+        if token.present?
+          begin
+            decoded_token = JWT.decode(token, Rails.application.credentials.fetch(:secret_key_base)).first
+            @current_user = User.find(decoded_token['sub'])
+          rescue JWT::DecodeError
+            render json: { status: 401, message: 'Invalid or expired token' }, status: :unauthorized
+          end
+        else
+          render json: { status: 401, message: 'Authorization header missing' }, status: :unauthorized
+        end
+      end
+
+      def current_user
+        @current_user
+      end
+
       def set_task
-        @task = Task.find(params[:id])
+        @task = current_user.tasks.find(params[:id]) # Asegúrate de que el usuario tiene acceso a la tarea
       end
 
       def task_params
-        params.require(:task).permit(:title, :description, :status, :priority, :date, :user_id)
+        params.require(:task).permit(:title, :description, :priority, :date)
       end
     end
   end
