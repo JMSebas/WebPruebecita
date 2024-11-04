@@ -7,6 +7,12 @@ class Users::SessionsController < Devise::SessionsController
 
   def respond_with(resource, options = {})
     token = request.env['warden-jwt_auth.token']
+    response.set_cookie(:token, {
+      value: token,
+      httponly: true,
+      secure: Rails.env.production?,
+      expires: 24.hour.from_now
+    })
     render json: {
       status: { code: 200, message: 'User signed in successfully', data: resource, access_token: token }
     }, status: :ok
@@ -15,6 +21,7 @@ class Users::SessionsController < Devise::SessionsController
   def respond_to_on_destroy
     if request.headers['Authorization'].present?
       jwt_token = request.headers['Authorization'].split(' ')[1]
+      response.delete_cookie(:token) # Eliminar cookie
       
       begin
         jwt_payload = JWT.decode(jwt_token, Rails.application.credentials.fetch(:secret_key_base), true, { algorithm: 'HS256' }).first

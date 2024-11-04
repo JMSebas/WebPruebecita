@@ -42,5 +42,11 @@ end
 
 gem 'devise'
 gem 'devise-jwt'
-  
+gem 'google-api-client'
+gem 'omniauth-google-oauth2'
+gem 'omniauth'
+gem 'sidekiq'
+gem 'dotenv-rails'
+gem 'omniauth-rails_csrf_protection'
+
 

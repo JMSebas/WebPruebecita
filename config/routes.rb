@@ -1,23 +1,25 @@
 Rails.application.routes.draw do
-
-  namespace :api do 
+  namespace :api do
     namespace :v1 do
-      resources :events
+      resources :events do
+      collection do
+        get :check_due_events # Asegúrate de que esta línea esté presente
+      end
+    end
       resources :tasks do
         member do
-          patch 'start_task'
-          patch 'finish_task'
+          put 'start_task'
+          put 'finish_task'
         end
       end
-    end 
+      
+    end
   end
 
   devise_for :users, controllers: {
     sessions: 'users/sessions',
-    registrations: 'users/registrations'
+    registrations: 'users/registrations',
   }
-  
-  # get "up" => "rails/health#show", as: :rails_health_check
 
-  
+  # get "up" => "rails/health#show", as: :rails_health_check
 end

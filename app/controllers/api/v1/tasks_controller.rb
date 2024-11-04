@@ -1,11 +1,11 @@
 module Api
   module V1
     class TasksController < ApplicationController
-      before_action :set_task, only: %i[show update destroy start_task finish_task]
       before_action :authenticate_user
+      before_action :set_task, only: %i[show update destroy start_task finish_task]
 
       def index
-        @tasks = current_user.tasks # Solo obtiene las tareas del usuario autenticado
+        @tasks = current_user.tasks
         render json: @tasks
       end
 
@@ -15,7 +15,7 @@ module Api
 
       def create
         task = current_user.tasks.new(task_params)
-        task.status = "pending" # Crea la tarea asociada al usuario actual
+        task.status = "pending"
         if task.save
           render json: { status: 200, message: 'Task created successfully', task: task }, status: :ok
         else
@@ -32,8 +32,15 @@ module Api
       end
 
       def destroy
-        @task.destroy
-        head :no_content
+        begin
+          if @task && @task.destroy
+            render json: { status: 200, message: 'Task deleted successfully' }, status: :ok
+          else
+            render json: { status: 404, message: 'Task not found' }, status: :not_found
+          end
+        rescue => e
+          render json: { status: 500, message: 'Error deleting task', error: e.message }, status: :internal_server_error
+        end
       end
 
       def start_task
@@ -56,15 +63,26 @@ module Api
 
       def authenticate_user
         token = request.headers['Authorization']&.split(' ')&.last
-        if token.present?
-          begin
-            decoded_token = JWT.decode(token, Rails.application.credentials.fetch(:secret_key_base)).first
-            @current_user = User.find(decoded_token['sub'])
-          rescue JWT::DecodeError
-            render json: { status: 401, message: 'Invalid or expired token' }, status: :unauthorized
-          end
-        else
+        
+        unless token
           render json: { status: 401, message: 'Authorization header missing' }, status: :unauthorized
+          return
+        end
+
+        begin
+          decoded_token = JWT.decode(token, Rails.application.credentials.fetch(:secret_key_base)).first
+          @current_user = User.find_by(id: decoded_token['sub'])
+          
+          unless @current_user
+            render json: { status: 401, message: 'Invalid user' }, status: :unauthorized
+            return
+          end
+        rescue JWT::DecodeError
+          render json: { status: 401, message: 'Invalid or expired token' }, status: :unauthorized
+          return
+        rescue => e
+          render json: { status: 500, message: 'Authentication error', error: e.message }, status: :internal_server_error
+          return
         end
       end
 
@@ -73,7 +91,14 @@ module Api
       end
 
       def set_task
-        @task = current_user.tasks.find(params[:id]) # Asegúrate de que el usuario tiene acceso a la tarea
+        begin
+          @task = current_user.tasks.find_by(id: params[:id])
+          unless @task
+            render json: { status: 404, message: 'Task not found' }, status: :not_found
+          end
+        rescue => e
+          render json: { status: 500, message: 'Error finding task', error: e.message }, status: :internal_server_error
+        end
       end
 
       def task_params
