@@ -7,7 +7,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private 
 
  def configure_permitted_parameters
-  devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :lastname, :address, :phone, :birthdate, :username, :email, :password])
+  devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :lastname, :username, :email, :password, :role])
 
 #  devise_parameter_sanitizer.permit(:account_update, keys: [:name, :lastname, :address, :phone, :birthdate, :username])
 end
@@ -16,7 +16,8 @@ end
     if resource.persisted?
       render json: {
         status: {code: 200, message: 'Signed up successfully',
-      data: resource}
+      data: resource,
+    }
       }, status: :ok
     else 
       render json: {

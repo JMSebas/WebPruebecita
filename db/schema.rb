@@ -10,32 +10,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_11_03_230522) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_05_220352) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "events", force: :cascade do |t|
+  create_table "projects", force: :cascade do |t|
     t.string "title"
     t.text "description"
-    t.datetime "dateEvent"
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "google_event_id"
-    t.index ["google_event_id"], name: "index_events_on_google_event_id"
-    t.index ["user_id"], name: "index_events_on_user_id"
+    t.index ["user_id"], name: "index_projects_on_user_id"
   end
 
   create_table "tasks", force: :cascade do |t|
     t.string "title"
     t.text "description"
     t.integer "status"
-    t.integer "priority"
-    t.date "date"
-    t.bigint "user_id", null: false
+    t.bigint "project_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_tasks_on_user_id"
+    t.index ["project_id"], name: "index_tasks_on_project_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -50,17 +45,14 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_03_230522) do
     t.string "name"
     t.string "lastname"
     t.string "address"
-    t.string "phone"
-    t.date "birthdate"
     t.string "username"
-    t.string "google_token"
-    t.string "google_refresh_token"
     t.datetime "token_expires_at"
+    t.integer "role"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
-  add_foreign_key "events", "users"
-  add_foreign_key "tasks", "users"
+  add_foreign_key "projects", "users"
+  add_foreign_key "tasks", "projects"
 end

@@ -2,10 +2,11 @@ module Api
   module V1
     class TasksController < ApplicationController
       before_action :authenticate_user
-      before_action :set_task, only: %i[show update destroy start_task finish_task]
+      before_action :set_project
+      before_action :set_task, only: %i[show update destroy]
 
       def index
-        @tasks = current_user.tasks
+        @tasks = @project.tasks
         render json: @tasks
       end
 
@@ -14,12 +15,11 @@ module Api
       end
 
       def create
-        task = current_user.tasks.new(task_params)
-        task.status = "pending"
-        if task.save
-          render json: { status: 200, message: 'Task created successfully', task: task }, status: :ok
+        @task = @project.tasks.new(task_params)
+        if @task.save
+          render json: { status: 200, message: 'Task created successfully', task: @task }, status: :ok
         else
-          render json: { status: 422, message: 'Task creation failed', errors: task.errors.full_messages }, status: :unprocessable_entity
+          render json: { status: 422, message: 'Task creation failed', errors: @task.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
@@ -32,30 +32,10 @@ module Api
       end
 
       def destroy
-        begin
-          if @task && @task.destroy
-            render json: { status: 200, message: 'Task deleted successfully' }, status: :ok
-          else
-            render json: { status: 404, message: 'Task not found' }, status: :not_found
-          end
-        rescue => e
-          render json: { status: 500, message: 'Error deleting task', error: e.message }, status: :internal_server_error
-        end
-      end
-
-      def start_task
-        if @task.update(status: 'in_process')
-          render json: @task
+        if @task.destroy
+          render json: { status: 200, message: 'Task deleted successfully' }, status: :ok
         else
-          render json: @task.errors, status: :unprocessable_entity
-        end
-      end
-
-      def finish_task
-        if @task.update(status: 'completed')
-          render json: @task
-        else
-          render json: @task.errors, status: :unprocessable_entity
+          render json: { status: 404, message: 'Task not found' }, status: :not_found
         end
       end
 
@@ -90,19 +70,26 @@ module Api
         @current_user
       end
 
-      def set_task
-        begin
-          @task = current_user.tasks.find_by(id: params[:id])
-          unless @task
-            render json: { status: 404, message: 'Task not found' }, status: :not_found
-          end
-        rescue => e
-          render json: { status: 500, message: 'Error finding task', error: e.message }, status: :internal_server_error
+      def set_project
+        @project = current_user.projects.find_by(id: params[:project_id])
+        unless @project
+          render json: { status: 404, message: 'Project not found' }, status: :not_found
         end
+      rescue => e
+        render json: { status: 500, message: 'Error finding project', error: e.message }, status: :internal_server_error
+      end
+
+      def set_task
+        @task = @project.tasks.find_by(id: params[:id])
+        unless @task
+          render json: { status: 404, message: 'Task not found' }, status: :not_found
+        end
+      rescue => e
+        render json: { status: 500, message: 'Error finding task', error: e.message }, status: :internal_server_error
       end
 
       def task_params
-        params.require(:task).permit(:title, :description, :priority, :date)
+        params.require(:task).permit(:title, :description, :status, :priority, :due_date)
       end
     end
   end

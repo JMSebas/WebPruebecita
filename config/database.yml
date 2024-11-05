@@ -24,7 +24,7 @@ development:
   <<: *default
   username: postgres
   password: root
-  database: backend_app_agenda_development
+  database: pruebaweb_development
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -60,7 +60,7 @@ test:
   <<: *default
   username: postgres
   password: root
-  database: backend_app_agenda_test
+  database: pruebaweb_agenda_test
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -84,6 +84,6 @@ test:
 #
 production:
   <<: *default
-  database: backend_app_agenda_production
+  database: pruebaweb_production
   username: postgres
-  password: <%= ENV["BACKEND_APP_AGENDA_DATABASE_PASSWORD"] %>
+  password: <%= ENV["PRUEBAWEB_DATABASE_PASSWORD"] %>

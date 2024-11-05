@@ -4,29 +4,20 @@ class User < ApplicationRecord
   # Agrega :omniauthable aquí
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
-         :jwt_authenticatable, :omniauthable, jwt_revocation_strategy: self,
-         omniauth_providers: [:google_oauth2]
-
-  has_many :tasks
-  has_many :events
-
-  validates :name, presence: true
-  validates :lastname, presence: true
-  validates :address, presence: true
-  validates :phone, presence: true, format: { with: /\A\d{10}\z/, message: 'must be exactly 10 digits' }
-  validates :birthdate, presence: true
-  validates :username, presence: true
-  validates :email, presence: true, uniqueness: true
-  validates :password, presence: true, length: { minimum: 6 }
+         :jwt_authenticatable, :omniauthable, jwt_revocation_strategy: self
 
   
+         has_many :projects, dependent: :destroy
+
+    enum role: {admin: 1, member: 2}
 
   def jwt_payload
     super.merge({
       'email' => email,
       'name' => name,
       'lastname' => lastname,
-      'username' => username
+      'username' => username,
+      'role' => role
     })
   end
 end

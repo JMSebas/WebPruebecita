@@ -3,11 +3,9 @@
 one:
   title: MyString
   description: MyText
-  status: 1
-  project: one
+  user: one
 
 two:
   title: MyString
   description: MyText
-  status: 1
-  project: two
+  user: two
